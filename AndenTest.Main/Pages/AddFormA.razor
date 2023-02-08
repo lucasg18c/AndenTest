@@ -1,0 +1,149 @@
+﻿@page "/form/a/add"
+
+@inject NavigationManager NavManager
+@inject IJSRuntime JsRuntime
+
+@inject IFormAService FormService
+
+<div class="container">
+    <div class="col">
+        <h3>Add Form A</h3>
+
+        <div class="row col-lg-3 mt-3">
+            <input type="text" placeholder="Form Name" @bind-value="Name" disabled="@Loading" />
+            <span class="error">@NameError</span>
+        </div>
+
+        <div class="row col-lg-3 mt-3">
+            <input type="text form-control" placeholder="Form Description" @bind-value="Description" disabled="@Loading" />
+            <span class="error">@DescriptionError</span>
+        </div>
+
+        <div class="row col-lg-3 mt-3">
+            <input type="number" placeholder="Form Amount A" @bind-value="Amount" disabled="@Loading" />
+            <span class="error">@AmountError</span>
+        </div>
+
+        @if (Loading)
+        {
+            <span>Saving form, please wait...</span>
+        }
+
+        <div class="row mt-3">
+            <button class="btn btn-secondary col-lg-1" @onclick="HandleCancel" disabled="@Loading">Cancel</button>
+            <button class="btn btn-primary col-lg-1 ms-3" @onclick="HandleSubmit" disabled="@Loading">Submit</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private int _amount = 1;
+
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            _name = value;
+            ClearErrors();
+        }
+    }
+    public string Description
+    {
+        get => _description;
+        set
+        {
+            _description = value;
+            ClearErrors();
+        }
+    }
+    public int Amount
+    {
+        get => _amount;
+        set
+        {
+            _amount = value;
+            ClearErrors();
+        }
+    }
+
+    public string? NameError { get; set; } = string.Empty;
+    public string? DescriptionError { get; set; } = string.Empty;
+    public string? AmountError { get; set; } = string.Empty;
+
+    public bool Loading { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        if (!ValidateForm()) return;
+
+        Loading = true;
+        StateHasChanged();
+        var result = await FormService.InsertFormAAsync(new FormA
+            {
+                Name = Name,
+                Description = Description,
+                AmountA = Amount,
+                DateCreated = DateTime.Now
+            });
+
+        Loading = false;
+        StateHasChanged();
+
+        if (result is null)
+        {
+            await JsRuntime.InvokeVoidAsync("alert", "An error occurred while creating the form, please try again later...");
+            return;
+        }
+
+        GoBack();
+    }
+
+    private async Task HandleCancel()
+    {
+        if (!string.IsNullOrEmpty(Name) || !string.IsNullOrEmpty(Description) || Amount != 1)
+        {
+            var result = await JsRuntime.InvokeAsync<bool>("confirm", "Do you want to quit? All changes will be lost");
+            if (!result)
+            {
+                return;
+            }
+        }
+        GoBack();
+    }
+
+    private void ClearErrors()
+    {
+        NameError = null;
+        DescriptionError = null;
+        AmountError = null;
+    }
+
+    private bool ValidateForm()
+    {
+        if (string.IsNullOrEmpty(Name) || Name.Length < 3)
+        {
+            NameError = "Name is required (min length 3)";
+        }
+
+        if (string.IsNullOrEmpty(Description) || Description.Length < 3)
+        {
+            DescriptionError = "Description is required  (min length 3)";
+        }
+
+        if (Amount < 1)
+        {
+            AmountError = "Amount is required (min value is 1)";
+        }
+
+        StateHasChanged();
+        return NameError is null && DescriptionError is null && AmountError is null;
+    }
+
+    private void GoBack()
+    {
+        _ = JsRuntime.InvokeVoidAsync("history.back");
+    }
+}

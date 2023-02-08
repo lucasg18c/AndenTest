@@ -1,0 +1,65 @@
+﻿@page "/"
+
+@inject IFormAService FormService
+
+<div class="container">
+
+    <div class="col">
+        <h1>Anden Test</h1>
+
+        @if (Forms is null)
+        {
+            <span>Loading...</span>
+        }
+        else
+        {
+            <a class="btn btn-primary col-xs-10 col-sm-2 offset-sm-10 offset-xs-2" href="/form/a/add">Add</a>
+
+            if (Forms.Count == 0)
+            {
+                <span>You'll find your Forms "A" here</span>
+                <span>Start adding them</span>
+            }
+            else
+            {
+
+                <h3>Forms A</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Date Created</th>
+                            <th scope="col">Amount A</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var form in Forms)
+                        {
+                            <tr>
+                                <td>@form.Name</td>
+                                <td>@form.Description</td>
+                                <td>@form.DateCreated.ToString("dd/MM/yyyy")</td>
+                                <td>@form.AmountA</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </div>
+</div>
+
+
+@code {
+
+    public List<FormA>? Forms { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        Forms = await FormService.GetAllFormsAAsync();
+        StateHasChanged();
+    }
+}
